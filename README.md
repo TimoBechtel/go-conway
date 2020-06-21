@@ -2,7 +2,9 @@
 
 Conway's Game of Life experiment, written in Go.
 
-Cells update themselves asynchronously. To start this process, the game first triggers a single cell.
+Cells are not updated all at once, but instead update themselves asynchronously. Everytime they update, they notify their neighbors.
+
+To start this process, the game first triggers a single cell.
 
 It may not work completely reliably yet.
 
