@@ -1,37 +1,62 @@
 package main
 
 import (
-	"time"
-
-	tm "github.com/buger/goterm"
+	"syscall/js"
 
 	"github.com/timobechtel/go-conway/internal"
 )
 
-func main() {
+var canvas js.Value
+var grid internal.Grid
 
-	width := 70
-	height := 30
+const cellSize = 20
 
-	grid := internal.Grid{Height: height, Width: width}
+func registerCanvas(args []js.Value) {
+	canvas = js.Global().Get("document").Call("getElementById", args[0].String())
+}
+
+func registerJSFunctions() {
+	js.Global().Set("registerCanvas", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		registerCanvas(args)
+		return nil
+	}))
+	js.Global().Set("run", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		run()
+		return nil
+	}))
+	js.Global().Set("render", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		render()
+		return nil
+	}))
+}
+
+func run() {
+	width := canvas.Get("width").Int() / cellSize
+	height := canvas.Get("height").Int() / cellSize
+
+	grid = internal.Grid{Height: height, Width: width}
 
 	grid.Init(grid.RandomPositions(height * width / 3))
 
 	grid.TriggerCell()
+}
 
-	for {
-		tm.Clear()
-		tm.MoveCursor(1, 1)
+func render() {
+	ctx := canvas.Call("getContext", "2d")
 
-		for _, col := range grid.GetCells() {
-			for _, cell := range col {
-				if cell.IsAlive() {
-					tm.Print(tm.MoveTo(tm.Background(tm.Color(" ", tm.BLACK), tm.WHITE), cell.GetPosition().X, cell.GetPosition().Y))
-				}
+	for _, col := range grid.GetCells() {
+		for _, cell := range col {
+			if cell.IsAlive() {
+				ctx.Call("fillRect", cell.GetPosition().X*cellSize, cell.GetPosition().Y*cellSize, cellSize, cellSize)
+			} else {
+				ctx.Call("clearRect", cell.GetPosition().X*cellSize, cell.GetPosition().Y*cellSize, cellSize, cellSize)
 			}
 		}
-
-		tm.Flush()
-		time.Sleep(time.Millisecond * 150)
 	}
+}
+
+func main() {
+	c := make(chan bool)
+	registerJSFunctions()
+	<-c
 }
