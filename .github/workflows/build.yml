@@ -17,7 +17,10 @@ jobs:
         with:
           go-version: '^1.14.4'
       - name: compile
-        run: GOOS=js GOARCH=wasm go build -o public/goconway.wasm cmd/main.go
+        env:
+          GOOS: js
+          GOARCH: wasm
+        run: go build -o web/goconway.wasm cmd/main.go
       - name: GitHub Pages
         uses: peaceiris/actions-gh-pages@v3.5.6
         with:
